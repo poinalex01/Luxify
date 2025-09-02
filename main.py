@@ -8,6 +8,7 @@ from screeninfo import get_monitors
 from playwright.sync_api import sync_playwright
 import mediapipe as mp
 from dotenv import load_dotenv
+import base64
 
 load_dotenv()
 VDO_URL = os.getenv("VDO_URL")
@@ -19,13 +20,12 @@ if VDO_URL is None:
     )
 
 TARGET_FPS = 60
-WAIT_VIDEO_TIMEOUT = 10000
 
 # MediaPipe hand setup
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 
-with (mp_hands.Hands(min_detection_confidence=0.6, min_tracking_confidence=0.4) as hands):
+with mp_hands.Hands(min_detection_confidence=0.6, min_tracking_confidence=0.4) as hands:
     with sync_playwright() as p:
         chromium_browser = p.chromium.launch(headless=True)
         monitor = get_monitors()[0]
@@ -43,22 +43,35 @@ with (mp_hands.Hands(min_detection_confidence=0.6, min_tracking_confidence=0.4) 
         except Exception:
             pass
 
-        page.wait_for_selector("video", timeout=WAIT_VIDEO_TIMEOUT)
+        page.wait_for_selector("video", timeout=10000)
         video_el = page.query_selector("video")
-        page.evaluate(
-            "(v)=>{v.muted=true; v.play().catch(()=>{});}", video_el
-        )
+        page.evaluate("(v)=>{v.muted=true; v.play().catch(()=>{});}", video_el)
 
         print("Press 'q' to quit.")
         frame_interval = 1.0 / TARGET_FPS
+
+        # JS to capture video frame as base64
+        js_capture = """
+        (v)=>{
+            const canvas = document.createElement('canvas');
+            canvas.width = v.videoWidth;
+            canvas.height = v.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/png').split(',')[1];
+        }
+        """
+
         try:
             while True:
                 t0 = time.time()
 
-                # convert screenshot to cv frame
-                img_bytes = video_el.screenshot()
-                img = Image.open(BytesIO(img_bytes)).convert("RGB")
+                # get frame from video using JS canvas
+                img_base64 = page.evaluate(js_capture, video_el)
+                img_bytes = BytesIO(base64.b64decode(img_base64))
+                img = Image.open(img_bytes).convert("RGB")
                 frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                frame = cv2.resize(frame, (width, height))
 
                 # handtracking
                 results = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
