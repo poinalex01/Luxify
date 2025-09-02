@@ -11,6 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 VDO_URL = os.getenv("VDO_URL")
+if VDO_URL is None:
+    raise RuntimeError(
+        "VDO_URL environment variable not set. "
+        "Please create a .env file with VDO_URL=<your_video_url> "
+        "or set it in your system environment."
+    )
 
 TARGET_FPS = 60
 WAIT_VIDEO_TIMEOUT = 10000
