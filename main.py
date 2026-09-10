@@ -10,12 +10,12 @@ import mediapipe as mp
 from dotenv import load_dotenv
 import base64
 
-load_dotenv()
-VDO_URL = os.getenv("VDO_URL")
-if VDO_URL is None:
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+VDO_URL = os.getenv("VDO_URL", "").strip()
+if not VDO_URL:
     raise RuntimeError(
         "VDO_URL environment variable not set. "
-        "Please create a .env file with VDO_URL=<your_video_url> "
+        "Please create c:/dev/Luxify/.env with VDO_URL=<your_video_url> "
         "or set it in your system environment."
     )
 

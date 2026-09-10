@@ -2,6 +2,12 @@
 __pycache__/
 *.py[codz]
 *$py.class
+.venv/
+
+# Local environment settings
+.env
+.env.*
+!.env.example
 
 # C extensions
 *.so
@@ -142,6 +148,7 @@ celerybeat.pid
 env/
 venv/
 ENV/
+!.env.example
 env.bak/
 venv.bak/
 

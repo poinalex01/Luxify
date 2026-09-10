@@ -1,0 +1,7 @@
+opencv-contrib-python==4.11.0.86
+numpy
+Pillow
+screeninfo
+playwright
+mediapipe==0.10.21
+python-dotenv
